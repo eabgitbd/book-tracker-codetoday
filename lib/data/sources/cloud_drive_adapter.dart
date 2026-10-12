@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import '../../core/config/google_oauth_config.dart';
@@ -26,11 +27,14 @@ class CloudDriveAdapter {
 
   CloudDriveAdapter({GoogleSignIn? googleSignIn})
       : _googleSignIn = googleSignIn ??
-            GoogleSignIn(
-              clientId: GoogleOAuthConfig.clientId,
-              serverClientId: GoogleOAuthConfig.clientId,
-              scopes: GoogleOAuthConfig.scopes,
-            );
+            (kIsWeb
+                ? GoogleSignIn(
+                    clientId: GoogleOAuthConfig.clientId,
+                    scopes: GoogleOAuthConfig.scopes,
+                  )
+                : GoogleSignIn(
+                    scopes: GoogleOAuthConfig.scopes,
+                  ));
 
   bool get isConnected => _currentAccount != null;
   String? get userAccount => _currentAccount?.email;

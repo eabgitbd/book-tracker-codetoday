@@ -122,9 +122,18 @@ class DriveSyncNotifier extends StateNotifier<DriveSyncState> {
         return false;
       }
     } catch (e) {
+      String errText = 'Sign-in error: ${e.toString()}';
+      if (e.toString().contains('10') || e.toString().contains('sign_in_failed')) {
+        errText = 'Google Sign-In Error 10 (Developer Error):\n'
+            'Ensure an Android OAuth Client is added in Google Cloud Console:\n'
+            '• Package name: com.codetoday.booktracker\n'
+            '• SHA-1: 7F:3E:8E:54:0D:8D:60:78:47:87:06:23:3E:B1:DF:86:84:B3:A5:54\n'
+            '• Add your Gmail to "Test users" in OAuth Consent Screen\n'
+            '• Enable Google Drive API in APIs & Services.';
+      }
       state = state.copyWith(
         isSyncing: false,
-        lastError: 'Sign-in error: ${e.toString()}',
+        lastError: errText,
       );
       return false;
     }
