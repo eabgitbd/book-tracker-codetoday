@@ -205,23 +205,30 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        driveSync.isConnected ? Icons.cloud_done : Icons.cloud_off,
-                        color: driveSync.isConnected ? Colors.green : Colors.grey,
-                      ),
+                      if (driveSync.isConnected && driveSync.accountPhotoUrl != null)
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundImage: NetworkImage(driveSync.accountPhotoUrl!),
+                        )
+                      else
+                        Icon(
+                          driveSync.isConnected ? Icons.cloud_done : Icons.cloud_off,
+                          color: driveSync.isConnected ? Colors.green : Colors.grey,
+                          size: 28,
+                        ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              driveSync.isConnected ? 'Google Drive Connected' : 'Drive Disconnected',
+                              driveSync.isConnected ? 'Google Drive Connected' : 'Google Drive Cloud Sync',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               driveSync.isConnected
-                                  ? 'Account: ${driveSync.accountEmail}'
-                                  : 'Connect for background library sync',
+                                  ? (driveSync.accountEmail ?? 'Connected')
+                                  : 'Sync your books & notes securely to Drive AppData',
                               style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
                             ),
                           ],
@@ -230,17 +237,48 @@ class ProfileScreen extends ConsumerWidget {
                       if (driveSync.isConnected)
                         TextButton(
                           onPressed: () => ref.read(driveSyncProvider.notifier).disconnect(),
-                          child: const Text('Disconnect'),
+                          child: const Text('Disconnect', style: TextStyle(color: Colors.red, fontSize: 12)),
                         )
                       else
-                        ElevatedButton(
-                          onPressed: () => _connectDrive(context, ref),
-                          child: const Text('Connect'),
+                        ElevatedButton.icon(
+                          icon: driveSync.isSyncing
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.login, size: 16),
+                          label: Text(driveSync.isSyncing ? 'Connecting...' : 'Connect'),
+                          onPressed: driveSync.isSyncing ? null : () => _connectDrive(context, ref),
                         ),
                     ],
                   ),
+
+                  if (driveSync.lastError != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              driveSync.lastError!,
+                              style: const TextStyle(color: Colors.red, fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   if (driveSync.isConnected) ...[
-                    const Divider(height: 24),
+                    const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -250,18 +288,41 @@ class ProfileScreen extends ConsumerWidget {
                               : 'Not synced yet',
                           style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
-                        TextButton.icon(
-                          icon: driveSync.isSyncing
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.sync, size: 18),
-                          label: Text(driveSync.isSyncing ? 'Syncing...' : 'Sync Now'),
-                          onPressed: driveSync.isSyncing
-                              ? null
-                              : () => ref.read(driveSyncProvider.notifier).triggerSync(),
+                        Row(
+                          children: [
+                            // Restore from Drive button
+                            OutlinedButton.icon(
+                              icon: driveSync.isRestoring
+                                  ? const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.cloud_download_outlined, size: 16),
+                              label: const Text('Restore', style: TextStyle(fontSize: 12)),
+                              onPressed: (driveSync.isSyncing || driveSync.isRestoring)
+                                  ? null
+                                  : () => _restoreFromDrive(context, ref),
+                            ),
+                            const SizedBox(width: 8),
+                            // Sync Now button
+                            ElevatedButton.icon(
+                              icon: driveSync.isSyncing
+                                  ? const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.sync, size: 16),
+                              label: Text(
+                                driveSync.isSyncing ? 'Syncing...' : 'Sync Now',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              onPressed: (driveSync.isSyncing || driveSync.isRestoring)
+                                  ? null
+                                  : () => ref.read(driveSyncProvider.notifier).triggerSync(),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -480,10 +541,61 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _connectDrive(BuildContext context, WidgetRef ref) {
-    ref.read(driveSyncProvider.notifier).connect('reader@gmail.com');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Connected to Google Drive!')),
+  void _connectDrive(BuildContext context, WidgetRef ref) async {
+    final success = await ref.read(driveSyncProvider.notifier).signInWithGoogle();
+    if (context.mounted) {
+      if (success) {
+        final email = ref.read(driveSyncProvider).accountEmail ?? 'your Google account';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connected to Google Drive as $email!')),
+        );
+      } else {
+        final err = ref.read(driveSyncProvider).lastError ?? 'Sign-in cancelled or failed.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err)),
+        );
+      }
+    }
+  }
+
+  void _restoreFromDrive(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore from Google Drive?'),
+        content: const Text(
+          'This will download and apply your latest library backup from Google Drive AppData. '
+          'A safety snapshot of your current local data will be created automatically before restoring.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Restore Now'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmed == true && context.mounted) {
+      final payload = await ref.read(driveSyncProvider.notifier).restoreFromDrive();
+      if (payload != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully restored ${payload.books.length} books from Google Drive!',
+            ),
+          ),
+        );
+      } else if (context.mounted) {
+        final err = ref.read(driveSyncProvider).lastError ?? 'Failed to restore from Google Drive.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err)),
+        );
+      }
+    }
   }
 }
