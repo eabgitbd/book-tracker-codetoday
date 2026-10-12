@@ -42,3 +42,4 @@ migrate_working_dir/
 # Symbols and native outputs
 *.orig
 *.rej
+build_artifacts/
