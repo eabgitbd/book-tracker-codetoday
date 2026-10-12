@@ -25,7 +25,7 @@ void main() {
       expect(overflownBook.remainingPages, 0);
 
       // Book with no page count
-      final noPageBook = book.copyWith(pageCount: null);
+      final noPageBook = book.copyWith(clearPageCount: true);
       expect(noPageBook.progressPercentage, 0.0);
       expect(noPageBook.hasPageCount, false);
     });
