@@ -28,16 +28,23 @@ android {
 
     signingConfigs {
         release {
-            def keystorePath = System.getenv("KEYSTORE_PATH")
-            def keystoreFile = keystorePath ? file(keystorePath) : file("upload-keystore.jks")
-            if (keystoreFile.exists()) {
-                storeFile keystoreFile
-                storePassword System.getenv("KEYSTORE_PASSWORD") ?: "codetoday_booktracker_secure"
-                keyAlias System.getenv("KEY_ALIAS") ?: "booktracker"
-                keyPassword System.getenv("KEY_PASSWORD") ?: "codetoday_booktracker_secure"
-            } else {
-                initWith debug
+            def keystoreFile = file("upload-keystore.jks")
+            if (!keystoreFile.exists()) {
+                keystoreFile = file("../../upload-keystore.jks")
             }
+            if (!keystoreFile.exists()) {
+                keystoreFile = file("../upload-keystore.jks")
+            }
+            if (!keystoreFile.exists()) {
+                throw new GradleException("Release keystore upload-keystore.jks not found! Checked: " + keystoreFile.absolutePath)
+            }
+            println("Building release APK signed with keystore: " + keystoreFile.absolutePath)
+            storeFile keystoreFile
+            storePassword(System.getenv("KEYSTORE_PASSWORD") ?: "codetoday_booktracker_secure")
+            keyAlias(System.getenv("KEY_ALIAS") ?: "booktracker")
+            keyPassword(System.getenv("KEY_PASSWORD") ?: "codetoday_booktracker_secure")
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
 

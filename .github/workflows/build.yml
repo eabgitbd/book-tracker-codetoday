@@ -46,14 +46,20 @@ jobs:
       - name: Decode Android Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is not set!"
+            exit 1
           fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cp android/app/upload-keystore.jks ./upload-keystore.jks
+          ls -la android/app/upload-keystore.jks
+          echo "=== VERIFYING DECODED KEYSTORE ==="
+          keytool -list -v -keystore android/app/upload-keystore.jks -storepass "${KEYSTORE_PASSWORD:-codetoday_booktracker_secure}"
 
       - name: Build Release APK
         env:
-          KEYSTORE_PATH: upload-keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
