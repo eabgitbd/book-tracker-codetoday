@@ -67,11 +67,17 @@ class Book {
   final String? languageCode;
   final int? pageCount;
   final int currentPage;
+  final String? coverUrl;
   final String? coverLocalPath;
   final int? coverColorValue;
   final BookFormat format;
   final ReadingStatus status;
   final double? rating;
+  final String? genre;
+  final bool isOwned;
+  final String? borrowedFrom;
+  final DateTime? borrowedAt;
+  final DateTime? returnDueDate;
   final DateTime? startedAt;
   final DateTime? completedAt;
   final DateTime lastReadAt;
@@ -92,11 +98,17 @@ class Book {
     this.languageCode,
     this.pageCount,
     this.currentPage = 0,
+    this.coverUrl,
     this.coverLocalPath,
     this.coverColorValue,
     this.format = BookFormat.physical,
     this.status = ReadingStatus.wantToRead,
     this.rating,
+    this.genre,
+    this.isOwned = true,
+    this.borrowedFrom,
+    this.borrowedAt,
+    this.returnDueDate,
     this.startedAt,
     this.completedAt,
     required this.lastReadAt,
@@ -120,6 +132,18 @@ class Book {
 
   bool get isCompleted => status == ReadingStatus.read;
 
+  bool get isBorrowed => !isOwned;
+
+  bool get isReturnOverdue =>
+      isBorrowed &&
+      returnDueDate != null &&
+      DateTime.now().isAfter(returnDueDate!);
+
+  int? get daysUntilReturnDue {
+    if (!isBorrowed || returnDueDate == null) return null;
+    return returnDueDate!.difference(DateTime.now()).inDays;
+  }
+
   Book copyWith({
     String? id,
     String? title,
@@ -134,11 +158,19 @@ class Book {
     int? pageCount,
     bool clearPageCount = false,
     int? currentPage,
+    String? coverUrl,
     String? coverLocalPath,
     int? coverColorValue,
     BookFormat? format,
     ReadingStatus? status,
     double? rating,
+    String? genre,
+    bool? isOwned,
+    String? borrowedFrom,
+    bool clearBorrowedFrom = false,
+    DateTime? borrowedAt,
+    DateTime? returnDueDate,
+    bool clearReturnDueDate = false,
     DateTime? startedAt,
     DateTime? completedAt,
     DateTime? lastReadAt,
@@ -159,11 +191,17 @@ class Book {
       languageCode: languageCode ?? this.languageCode,
       pageCount: clearPageCount ? null : (pageCount ?? this.pageCount),
       currentPage: currentPage ?? this.currentPage,
+      coverUrl: coverUrl ?? this.coverUrl,
       coverLocalPath: coverLocalPath ?? this.coverLocalPath,
       coverColorValue: coverColorValue ?? this.coverColorValue,
       format: format ?? this.format,
       status: status ?? this.status,
       rating: rating ?? this.rating,
+      genre: genre ?? this.genre,
+      isOwned: isOwned ?? this.isOwned,
+      borrowedFrom: clearBorrowedFrom ? null : (borrowedFrom ?? this.borrowedFrom),
+      borrowedAt: borrowedAt ?? this.borrowedAt,
+      returnDueDate: clearReturnDueDate ? null : (returnDueDate ?? this.returnDueDate),
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
       lastReadAt: lastReadAt ?? this.lastReadAt,
@@ -187,11 +225,17 @@ class Book {
       'languageCode': languageCode,
       'pageCount': pageCount,
       'currentPage': currentPage,
+      'coverUrl': coverUrl,
       'coverLocalPath': coverLocalPath,
       'coverColorValue': coverColorValue,
       'format': format.name,
       'status': status.name,
       'rating': rating,
+      'genre': genre,
+      'isOwned': isOwned,
+      'borrowedFrom': borrowedFrom,
+      'borrowedAt': borrowedAt?.toIso8601String(),
+      'returnDueDate': returnDueDate?.toIso8601String(),
       'startedAt': startedAt?.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
       'lastReadAt': lastReadAt.toIso8601String(),
@@ -215,6 +259,7 @@ class Book {
       languageCode: json['languageCode'] as String?,
       pageCount: json['pageCount'] as int?,
       currentPage: json['currentPage'] as int? ?? 0,
+      coverUrl: json['coverUrl'] as String?,
       coverLocalPath: json['coverLocalPath'] as String?,
       coverColorValue: json['coverColorValue'] as int?,
       format: BookFormat.values.firstWhere(
@@ -226,6 +271,15 @@ class Book {
         orElse: () => ReadingStatus.wantToRead,
       ),
       rating: (json['rating'] as num?)?.toDouble(),
+      genre: json['genre'] as String?,
+      isOwned: json['isOwned'] as bool? ?? true,
+      borrowedFrom: json['borrowedFrom'] as String?,
+      borrowedAt: json['borrowedAt'] != null
+          ? DateTime.parse(json['borrowedAt'] as String)
+          : null,
+      returnDueDate: json['returnDueDate'] != null
+          ? DateTime.parse(json['returnDueDate'] as String)
+          : null,
       startedAt: json['startedAt'] != null ? DateTime.parse(json['startedAt'] as String) : null,
       completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt'] as String) : null,
       lastReadAt: json['lastReadAt'] != null ? DateTime.parse(json['lastReadAt'] as String) : DateTime.now(),

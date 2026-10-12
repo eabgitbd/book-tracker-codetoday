@@ -121,7 +121,7 @@ class BookDetailsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
 
-                    // Status and Format Badges
+                    // Status, Format, Genre and Ownership Badges
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
@@ -152,6 +152,50 @@ class BookDetailsScreen extends ConsumerWidget {
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                         ),
+                        if (book.genre != null && book.genre!.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.secondary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              book.genre!,
+                              style: TextStyle(
+                                color: theme.colorScheme.secondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: book.isOwned
+                                ? Colors.green.withOpacity(0.12)
+                                : Colors.amber.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                book.isOwned ? Icons.check_circle_outline : Icons.assignment_ind_outlined,
+                                size: 12,
+                                color: book.isOwned ? Colors.green[800] : Colors.amber[900],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                book.isOwned ? 'Owned' : 'Borrowed',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: book.isOwned ? Colors.green[800] : Colors.amber[900],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -166,6 +210,81 @@ class BookDetailsScreen extends ConsumerWidget {
               ),
             ],
           ),
+
+          // Borrowed Book Status Card
+          if (book.isBorrowed) ...[
+            const SizedBox(height: 14),
+            Card(
+              color: book.isReturnOverdue
+                  ? Colors.red.withOpacity(0.08)
+                  : theme.colorScheme.secondary.withOpacity(0.08),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: book.isReturnOverdue
+                      ? Colors.red.withOpacity(0.4)
+                      : theme.colorScheme.secondary.withOpacity(0.3),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      book.isReturnOverdue ? Icons.warning_amber_rounded : Icons.schedule,
+                      color: book.isReturnOverdue ? Colors.red : theme.colorScheme.secondary,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            book.borrowedFrom != null && book.borrowedFrom!.isNotEmpty
+                                ? 'Borrowed from: ${book.borrowedFrom}'
+                                : 'Borrowed Book',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          const SizedBox(height: 2),
+                          if (book.returnDueDate != null)
+                            Text(
+                              book.isReturnOverdue
+                                  ? 'OVERDUE: Due on ${DateFormatter.formatDate(book.returnDueDate!)}'
+                                  : 'Due: ${DateFormatter.formatDate(book.returnDueDate!)} (${book.daysUntilReturnDue} days left)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: book.isReturnOverdue ? Colors.red : null,
+                                fontWeight: book.isReturnOverdue ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            )
+                          else
+                            const Text(
+                              'No return date set',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        final updated = book.copyWith(
+                          isOwned: true,
+                          clearBorrowedFrom: true,
+                          clearReturnDueDate: true,
+                        );
+                        ref.read(booksProvider.notifier).saveBook(updated);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Marked book as returned to owner/library')),
+                        );
+                      },
+                      child: const Text('Return'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
 
           // Progress Bar and Quick Increment Buttons

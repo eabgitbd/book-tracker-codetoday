@@ -71,12 +71,14 @@ final booksProvider = StateNotifierProvider<BooksNotifier, List<Book>>((ref) {
 
 final bookSearchQueryProvider = StateProvider<String>((ref) => '');
 final bookFilterStatusProvider = StateProvider<ReadingStatus?>((ref) => null);
+final bookFilterOwnershipProvider = StateProvider<bool?>((ref) => null);
 final bookSortOptionProvider = StateProvider<BookSortOption>((ref) => BookSortOption.recentlyRead);
 
 final filteredBooksProvider = Provider<List<Book>>((ref) {
   final books = ref.watch(booksProvider);
   final query = ref.watch(bookSearchQueryProvider).trim().toLowerCase();
   final statusFilter = ref.watch(bookFilterStatusProvider);
+  final ownershipFilter = ref.watch(bookFilterOwnershipProvider);
   final sortOption = ref.watch(bookSortOptionProvider);
 
   var list = books;
@@ -85,12 +87,18 @@ final filteredBooksProvider = Provider<List<Book>>((ref) {
     list = list.where((b) => b.status == statusFilter).toList();
   }
 
+  if (ownershipFilter != null) {
+    list = list.where((b) => b.isOwned == ownershipFilter).toList();
+  }
+
   if (query.isNotEmpty) {
     list = list.where((b) {
       final titleMatch = b.title.toLowerCase().contains(query);
       final authorMatch = b.author.toLowerCase().contains(query);
       final isbnMatch = b.isbn?.toLowerCase().contains(query) ?? false;
-      return titleMatch || authorMatch || isbnMatch;
+      final genreMatch = b.genre?.toLowerCase().contains(query) ?? false;
+      final borrowedFromMatch = b.borrowedFrom?.toLowerCase().contains(query) ?? false;
+      return titleMatch || authorMatch || isbnMatch || genreMatch || borrowedFromMatch;
     }).toList();
   }
 

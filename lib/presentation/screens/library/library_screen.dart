@@ -77,7 +77,7 @@ class LibraryScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search title, author, or ISBN...',
+                hintText: 'Search title, author, genre, or borrower...',
                 prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: ref.watch(bookSearchQueryProvider).isNotEmpty
                     ? IconButton(
@@ -91,7 +91,7 @@ class LibraryScreen extends ConsumerWidget {
             ),
           ),
 
-          // Status Filter Chips
+          // Filter Chips (Status & Ownership)
           SizedBox(
             height: 44,
             child: ListView(
@@ -102,8 +102,21 @@ class LibraryScreen extends ConsumerWidget {
                   context,
                   ref,
                   label: 'All (${ref.watch(booksProvider).length})',
-                  isSelected: currentStatusFilter == null,
-                  onSelected: () => ref.read(bookFilterStatusProvider.notifier).state = null,
+                  isSelected: currentStatusFilter == null && ref.watch(bookFilterOwnershipProvider) == null,
+                  onSelected: () {
+                    ref.read(bookFilterStatusProvider.notifier).state = null;
+                    ref.read(bookFilterOwnershipProvider.notifier).state = null;
+                  },
+                ),
+                _buildFilterChip(
+                  context,
+                  ref,
+                  label: 'Borrowed (${ref.watch(booksProvider).where((b) => b.isBorrowed).length})',
+                  isSelected: ref.watch(bookFilterOwnershipProvider) == false,
+                  onSelected: () {
+                    final curr = ref.read(bookFilterOwnershipProvider);
+                    ref.read(bookFilterOwnershipProvider.notifier).state = curr == false ? null : false;
+                  },
                 ),
                 ...ReadingStatus.values.map((s) {
                   return _buildFilterChip(
@@ -218,11 +231,40 @@ class LibraryScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: BookCoverWidget(
-              book: book,
-              width: double.infinity,
-              height: double.infinity,
-              showProgressOverlay: true,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: BookCoverWidget(
+                    book: book,
+                    width: double.infinity,
+                    height: double.infinity,
+                    showProgressOverlay: true,
+                  ),
+                ),
+                if (book.isBorrowed)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: book.isReturnOverdue ? Colors.red : const Color(0xFFD97706),
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1)),
+                        ],
+                      ),
+                      child: Text(
+                        book.isReturnOverdue ? 'OVERDUE' : 'BORROWED',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 6),
@@ -238,6 +280,17 @@ class LibraryScreen extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
+          if (book.genre != null && book.genre!.isNotEmpty)
+            Text(
+              book.genre!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
         ],
       ),
     );
@@ -256,6 +309,26 @@ class LibraryScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (book.genre != null && book.genre!.isNotEmpty)
+            Text(
+              book.genre!,
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          if (book.isBorrowed)
+            Text(
+              book.isReturnOverdue
+                  ? 'Overdue • Borrowed from ${book.borrowedFrom ?? "library"}'
+                  : 'Borrowed from ${book.borrowedFrom ?? "library"}',
+              style: TextStyle(
+                fontSize: 11,
+                color: book.isReturnOverdue ? Colors.red : const Color(0xFFD97706),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           if (book.hasPageCount) ...[
             const SizedBox(height: 4),
             ReadingProgressBar(progress: book.progressPercentage, height: 4),

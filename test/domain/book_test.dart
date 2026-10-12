@@ -30,14 +30,22 @@ void main() {
       expect(noPageBook.hasPageCount, false);
     });
 
-    test('Serializes to and from JSON correctly', () {
+    test('Serializes to and from JSON correctly including genre and borrowing', () {
       final now = DateTime.now();
+      final dueDate = now.add(const Duration(days: 14));
+
       final original = Book(
         id: 'book-123',
         title: 'Clean Architecture',
         author: 'Robert C. Martin',
         pageCount: 350,
         currentPage: 120,
+        genre: 'Software Engineering',
+        coverUrl: 'https://example.com/cover.jpg',
+        isOwned: false,
+        borrowedFrom: 'Community Library',
+        borrowedAt: now,
+        returnDueDate: dueDate,
         format: BookFormat.physical,
         status: ReadingStatus.reading,
         rating: 4.5,
@@ -45,6 +53,12 @@ void main() {
         createdAt: now,
         updatedAt: now,
       );
+
+      expect(original.isBorrowed, true);
+      expect(original.borrowedFrom, 'Community Library');
+      expect(original.isReturnOverdue, false);
+      expect(original.daysUntilReturnDue, greaterThanOrEqualTo(13));
+      expect(original.coverUrl, 'https://example.com/cover.jpg');
 
       final json = original.toJson();
       final reconstructed = Book.fromJson(json);
@@ -54,9 +68,39 @@ void main() {
       expect(reconstructed.author, original.author);
       expect(reconstructed.pageCount, original.pageCount);
       expect(reconstructed.currentPage, original.currentPage);
+      expect(reconstructed.genre, 'Software Engineering');
+      expect(reconstructed.coverUrl, 'https://example.com/cover.jpg');
+      expect(reconstructed.isOwned, false);
+      expect(reconstructed.borrowedFrom, 'Community Library');
+      expect(reconstructed.returnDueDate?.day, dueDate.day);
       expect(reconstructed.format, original.format);
       expect(reconstructed.status, original.status);
       expect(reconstructed.rating, original.rating);
+    });
+
+    test('Correctly identifies overdue borrowed books', () {
+      final now = DateTime.now();
+      final pastDue = now.subtract(const Duration(days: 3));
+
+      final overdueBook = Book(
+        id: 'b-overdue',
+        title: 'Dune',
+        author: 'Frank Herbert',
+        isOwned: false,
+        borrowedFrom: 'Alex',
+        returnDueDate: pastDue,
+        lastReadAt: now,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      expect(overdueBook.isBorrowed, true);
+      expect(overdueBook.isReturnOverdue, true);
+
+      // Owned book cannot be overdue
+      final ownedBook = overdueBook.copyWith(isOwned: true);
+      expect(ownedBook.isBorrowed, false);
+      expect(ownedBook.isReturnOverdue, false);
     });
   });
 }

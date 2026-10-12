@@ -40,6 +40,9 @@ class BookCoverWidget extends StatelessWidget {
     final hasLocalImage = book.coverLocalPath != null &&
         book.coverLocalPath!.isNotEmpty &&
         File(book.coverLocalPath!).existsSync();
+    final hasNetworkImage = book.coverUrl != null &&
+        book.coverUrl!.isNotEmpty &&
+        (book.coverUrl!.startsWith('http://') || book.coverUrl!.startsWith('https://'));
 
     final baseColor = _resolveColor();
 
@@ -64,6 +67,12 @@ class BookCoverWidget extends StatelessWidget {
             if (hasLocalImage)
               Image.file(
                 File(book.coverLocalPath!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildProceduralCover(baseColor),
+              )
+            else if (hasNetworkImage)
+              Image.network(
+                book.coverUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => _buildProceduralCover(baseColor),
               )
