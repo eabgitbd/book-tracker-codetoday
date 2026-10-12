@@ -26,9 +26,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEYSTORE_PATH")
+            def keystoreFile = keystorePath ? file(keystorePath) : file("upload-keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword System.getenv("KEYSTORE_PASSWORD") ?: "codetoday_booktracker_secure"
+                keyAlias System.getenv("KEY_ALIAS") ?: "booktracker"
+                keyPassword System.getenv("KEY_PASSWORD") ?: "codetoday_booktracker_secure"
+            } else {
+                initWith debug
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
             minifyEnabled false
             shrinkResources false
         }

@@ -44,3 +44,5 @@ migrate_working_dir/
 *.rej
 build_artifacts/
 *.apk
+*.jks
+*.keystore
