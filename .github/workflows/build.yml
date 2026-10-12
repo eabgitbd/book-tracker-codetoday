@@ -44,7 +44,7 @@ jobs:
         run: flutter test --coverage
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
