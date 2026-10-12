@@ -203,7 +203,7 @@ class CloudDriveAdapter {
 
   /// Process pending sync items
   Future<CloudSyncResult> processOutbox(List<SyncOutboxItem> outbox) async {
-    if (!_isConnected) {
+    if (!isConnected) {
       return CloudSyncResult(
         success: false,
         syncedCount: 0,

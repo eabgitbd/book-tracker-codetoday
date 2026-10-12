@@ -35,14 +35,16 @@ void main() {
       final downloadResult = await adapter.downloadBackup();
       expect(downloadResult, isNull);
 
+      final now = DateTime.now();
       final outboxResult = await adapter.processOutbox([
         SyncOutboxItem(
           id: 'item1',
           entityType: 'book',
           entityId: 'b1',
-          action: SyncAction.create,
+          operation: SyncOperation.create,
           payloadJson: '{}',
-          createdAt: DateTime.now(),
+          createdAt: now,
+          updatedAt: now,
         ),
       ]);
       expect(outboxResult.success, false);
