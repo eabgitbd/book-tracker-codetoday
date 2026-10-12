@@ -43,8 +43,6 @@ class StreakCalculator {
       );
     }
 
-    final sortedDates = uniqueDates.toList()..sort((a, b) => b.compareTo(a));
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));

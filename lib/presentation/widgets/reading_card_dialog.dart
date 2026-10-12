@@ -124,12 +124,12 @@ class ReadingCardDialog extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // Watermark branding
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         'Captured with ${AppConstants.appName} • ${AppConstants.developer}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           color: Color(0xFFA0A59E),
                         ),
