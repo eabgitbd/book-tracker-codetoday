@@ -23,6 +23,12 @@ class GoogleOAuthConfig {
   static const String authProviderCertUrl =
       'https://www.googleapis.com/oauth2/v1/certs';
 
+  /// Drive scopes requested incrementally after primary sign in
+  static const List<String> driveScopes = [
+    'https://www.googleapis.com/auth/drive.appdata',
+    'https://www.googleapis.com/auth/drive.file',
+  ];
+
   /// Scopes required for Google Sign-In and private appData sync
   static const List<String> scopes = [
     'email',

@@ -30,15 +30,11 @@ class CloudDriveAdapter {
             (kIsWeb
                 ? GoogleSignIn(
                     clientId: GoogleOAuthConfig.webClientId,
-                    scopes: GoogleOAuthConfig.scopes,
+                    scopes: const ['email'],
                   )
                 : GoogleSignIn(
-                    // Android: no clientId/serverClientId needed.
-                    // Google Play Services uses the registered Android OAuth client
-                    // (package name + SHA-1) automatically via google-services metadata.
-                    scopes: GoogleOAuthConfig.scopes,
+                    scopes: const ['email'],
                   ));
-
 
   bool get isConnected => _currentAccount != null;
   String? get userAccount => _currentAccount?.email;
@@ -50,16 +46,35 @@ class CloudDriveAdapter {
   Future<bool> signInSilently() async {
     try {
       _currentAccount = await _googleSignIn.signInSilently();
+      if (_currentAccount != null) {
+        // Ensure drive scopes are available
+        final hasDriveScope = await _googleSignIn.canAccessScopes(GoogleOAuthConfig.driveScopes);
+        if (!hasDriveScope) {
+          await _googleSignIn.requestScopes(GoogleOAuthConfig.driveScopes);
+        }
+      }
       return _currentAccount != null;
     } catch (_) {
       return false;
     }
   }
 
-  /// Interactive sign in
+  /// Interactive sign in with incremental scope authorization
   Future<GoogleSignInAccount?> signIn() async {
     try {
+      // Step 1: Sign in with basic credentials (avoids ApiException 12500)
       _currentAccount = await _googleSignIn.signIn();
+      if (_currentAccount == null) return null;
+
+      // Step 2: Request Google Drive scopes incrementally
+      final hasDriveScope = await _googleSignIn.canAccessScopes(GoogleOAuthConfig.driveScopes);
+      if (!hasDriveScope) {
+        final granted = await _googleSignIn.requestScopes(GoogleOAuthConfig.driveScopes);
+        if (!granted) {
+          debugPrint('Drive scopes were not granted by user.');
+        }
+      }
+
       return _currentAccount;
     } catch (e) {
       rethrow;
