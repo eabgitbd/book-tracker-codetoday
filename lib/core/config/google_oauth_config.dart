@@ -1,7 +1,12 @@
 /// Google OAuth 2.0 Client Configuration
 /// Configured for project "book-tracker-codetoday"
 class GoogleOAuthConfig {
-  /// The OAuth 2.0 Client ID generated in Google Cloud Console
+  /// The OAuth 2.0 Web Client ID generated in Google Cloud Console
+  /// Required as serverClientId on Android for Drive API scopes
+  static const String webClientId =
+      '50877154908-oilmqvro7cthu2fb4t3t0rji6ps12hkh.apps.googleusercontent.com';
+
+  /// Legacy installed client ID
   static const String clientId =
       '50877154908-3hn292kf8uta9geu6hbvthcitoavpnib.apps.googleusercontent.com';
 

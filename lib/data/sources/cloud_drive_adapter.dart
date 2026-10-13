@@ -29,10 +29,11 @@ class CloudDriveAdapter {
       : _googleSignIn = googleSignIn ??
             (kIsWeb
                 ? GoogleSignIn(
-                    clientId: GoogleOAuthConfig.clientId,
+                    clientId: GoogleOAuthConfig.webClientId,
                     scopes: GoogleOAuthConfig.scopes,
                   )
                 : GoogleSignIn(
+                    serverClientId: GoogleOAuthConfig.webClientId,
                     scopes: GoogleOAuthConfig.scopes,
                   ));
 
