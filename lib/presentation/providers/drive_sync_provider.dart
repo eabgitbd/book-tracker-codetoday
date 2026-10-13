@@ -123,24 +123,14 @@ class DriveSyncNotifier extends StateNotifier<DriveSyncState> {
       }
     } catch (e) {
       final rawError = e.toString();
-      String errText;
-      if (rawError.contains('10') || rawError.contains('sign_in_failed')) {
-        errText = 'Google Sign-In Error 10 (Developer Error):\n'
-            'Detail: $rawError\n\n'
-            'Checklist:\n'
-            '1. In Google Cloud Console, check if your Android Client has package "com.codetoday.booktracker"\n'
-            '2. Confirm SHA-1: 7F:3E:8E:54:0D:8D:60:78:47:87:06:23:3E:B1:DF:86:84:B3:A5:54\n'
-            '3. Check OAuth Consent Screen: Add your email to "Test users"\n'
-            '4. Try clearing Google Play Services cache if newly added.';
-      } else {
-        errText = 'Sign-in error: $rawError';
-      }
+      String errText = 'Sign-in failed: $rawError';
       state = state.copyWith(
         isSyncing: false,
         lastError: errText,
       );
       return false;
     }
+
   }
 
   /// Disconnect Google Account

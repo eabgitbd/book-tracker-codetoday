@@ -33,9 +33,12 @@ class CloudDriveAdapter {
                     scopes: GoogleOAuthConfig.scopes,
                   )
                 : GoogleSignIn(
-                    serverClientId: GoogleOAuthConfig.webClientId,
+                    // Android: no clientId/serverClientId needed.
+                    // Google Play Services uses the registered Android OAuth client
+                    // (package name + SHA-1) automatically via google-services metadata.
                     scopes: GoogleOAuthConfig.scopes,
                   ));
+
 
   bool get isConnected => _currentAccount != null;
   String? get userAccount => _currentAccount?.email;
