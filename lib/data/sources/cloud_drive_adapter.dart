@@ -33,6 +33,7 @@ class CloudDriveAdapter {
                     scopes: const ['email'],
                   )
                 : GoogleSignIn(
+                    serverClientId: GoogleOAuthConfig.webClientId,
                     scopes: const ['email'],
                   ));
 
